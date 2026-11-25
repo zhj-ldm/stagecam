@@ -1,5 +1,7 @@
 # StageCam 展台
 
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE.md)
+
 面向教室大屏（触控一体机 / 智慧黑板）的实物展台软件，纯 Electron 实现，Mac 开发、Windows 运行完全一致。
 
 ## 功能
@@ -41,3 +43,10 @@ tests          geometry / squircle / pinch 的单元测试
 ## CI
 
 `.github/workflows/ci.yml`：在 macOS 与 Windows 上跑类型检查、单测、构建、Lint；通过后在 Windows 上打包 NSIS 安装包并上传为构建产物。
+
+
+## 许可
+
+本项目以 **Apache License 2.0** 开源，完整条款见 [LICENSE.md](LICENSE.md)。
+
+你可以自由使用、修改、分发、商用，包括闭源集成，只需保留版权与许可声明、保留 NOTICE 文件（如有），并在修改过的文件上注明改动。许可按「现状」提供，不含任何担保。

@@ -4,7 +4,7 @@
   "description": "面向教室大屏的实物展台软件（Electron）",
   "main": "./out/main/index.js",
   "author": "zhj",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
