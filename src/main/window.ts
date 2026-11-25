@@ -26,8 +26,8 @@ export function createMainWindow(): BrowserWindow {
     }
   })
 
-  // 全屏黑板上不需要系统标题栏按钮，关闭/最小化由应用自绘控件承担
-  win.setWindowButtonVisibility(false)
+  // 关闭交通灯按钮的 API 只在 macOS 上存在，Windows 调用会直接抛异常导致启动失败
+  if (process.platform === 'darwin') win.setWindowButtonVisibility(false)
   // 禁用 Chromium 自身的页面缩放：触控屏双指只允许驱动应用内的视图变换
   win.webContents.setVisualZoomLevelLimits(1, 1)
 

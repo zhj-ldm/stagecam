@@ -37,6 +37,44 @@ jobs:
       - name: Lint
         run: npm run lint
 
+  smoke-windows:
+    name: Windows 启动冒烟
+    runs-on: windows-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 生产构建
+        run: npx electron-vite build
+
+      - name: 启动应用并校验启动标记
+        shell: pwsh
+        run: |
+          $userData = Join-Path $env:APPDATA 'stagecam'
+          $marker = Join-Path $userData 'launch-ok.log'
+          $errlog = Join-Path $userData 'startup-error.log'
+          Remove-Item $marker -ErrorAction SilentlyContinue
+          Remove-Item $errlog -ErrorAction SilentlyContinue
+          $p = Start-Process -FilePath "node_modules\electron\dist\electron.exe" -ArgumentList ".", "--disable-gpu" -PassThru
+          Start-Sleep -Seconds 15
+          $running = -not $p.HasExited
+          Write-Host "process still running: $running"
+          if (Test-Path $marker) { Write-Host "marker:"; Get-Content $marker }
+          if (Test-Path $errlog) { Write-Host "error log:"; Get-Content $errlog }
+          Get-Process electron -ErrorAction SilentlyContinue | Stop-Process -Force
+          if (-not (Test-Path $marker)) {
+            Write-Host "::error::应用启动失败或未写出启动标记"
+            exit 1
+          }
+
   package-windows:
     name: 打包 Windows 安装包
     runs-on: windows-latest
