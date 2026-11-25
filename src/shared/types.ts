@@ -22,6 +22,8 @@ export interface AppSettings {
   penColor: string
   penWidth: number
   eraserWidth: number
+  /** 画面旋转角度，只允许 0 / 90 / 180 / 270，随软件记住 */
+  rotation: number
 }
 
 export interface SavePhotoPayload {

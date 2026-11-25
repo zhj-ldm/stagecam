@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 
-import { clampView, fitView, zoomAt } from '@renderer/lib/geometry'
+import { clampView, fitView, zoomAt, type Rotation } from '@renderer/lib/geometry'
 import type { InkTool, Stroke } from '@renderer/lib/ink'
 
 export type AppMode = 'browse' | 'annotate'
@@ -18,6 +18,8 @@ interface AppState {
   penColor: string
   penWidth: number
   eraserWidth: number
+  /** 画面旋转，每次点击 +90° 循环 */
+  rotation: Rotation
 
   videoEl: HTMLVideoElement | null
   frozen: ImageBitmap | null
@@ -32,6 +34,8 @@ interface AppState {
   setPenColor: (color: string) => void
   setPenWidth: (width: number) => void
   setEraserWidth: (width: number) => void
+  rotate: () => void
+  setRotation: (rotation: Rotation) => void
   setVideoEl: (el: HTMLVideoElement | null) => void
 
   freeze: () => Promise<void>
@@ -60,6 +64,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   penColor: '#F53F3F',
   penWidth: 5,
   eraserWidth: 32,
+  rotation: 0,
 
   videoEl: null,
   frozen: null,
@@ -83,6 +88,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   setEraserWidth: (eraserWidth) => {
     set({ eraserWidth })
     void window.api.settings.patch({ eraserWidth })
+  },
+
+  rotate: () => {
+    const next = (((get().rotation + 90) % 360) as Rotation)
+    get().setRotation(next)
+  },
+
+  setRotation: (rotation) => {
+    // 旋转后显示框宽高互换，旧的位移没有意义，直接回到适配视图
+    set({ rotation, view: fitView() })
+    void window.api.settings.patch({ rotation })
   },
 
   setVideoEl: (videoEl) => set({ videoEl }),

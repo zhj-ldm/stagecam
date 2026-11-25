@@ -1,4 +1,4 @@
-import { toScreen, type Rect } from './geometry'
+import { toScreen, type Rect, type Rotation } from './geometry'
 import { drawStroke, type InkPoint, type Stroke } from './ink'
 
 const INK_WIDTH_REFERENCE = 1920
@@ -8,10 +8,11 @@ function paintSegment(
   stroke: Stroke,
   rect: Rect,
   from: InkPoint,
-  to: InkPoint
+  to: InkPoint,
+  rotation: Rotation
 ): void {
-  const start = toScreen(rect, from.u, from.v)
-  const end = toScreen(rect, to.u, to.v)
+  const start = toScreen(rect, from.u, from.v, rotation)
+  const end = toScreen(rect, to.u, to.v, rotation)
   const pxWidth = Math.max(1, stroke.width * (rect.w / INK_WIDTH_REFERENCE))
 
   ctx.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
@@ -31,11 +32,12 @@ function paintSmoothSegment(
   rect: Rect,
   from: InkPoint,
   control: InkPoint,
-  to: InkPoint
+  to: InkPoint,
+  rotation: Rotation
 ): void {
-  const start = toScreen(rect, from.u, from.v)
-  const ctrl = toScreen(rect, control.u, control.v)
-  const end = toScreen(rect, to.u, to.v)
+  const start = toScreen(rect, from.u, from.v, rotation)
+  const ctrl = toScreen(rect, control.u, control.v, rotation)
+  const end = toScreen(rect, to.u, to.v, rotation)
   const pxWidth = Math.max(1, stroke.width * (rect.w / INK_WIDTH_REFERENCE))
 
   ctx.strokeStyle = stroke.color
@@ -67,6 +69,7 @@ export class InkEngine {
   private liveCtx: CanvasRenderingContext2D | null = null
   private strokes: Stroke[] = []
   private rect: Rect = { x: 0, y: 0, w: 1, h: 1 }
+  private rotation: Rotation = 0
   private dirty = true
   private cssWidth = 1
   private cssHeight = 1
@@ -101,6 +104,13 @@ export class InkEngine {
   setRect(rect: Rect): void {
     if (sameRect(this.rect, rect)) return
     this.rect = rect
+    this.dirty = true
+  }
+
+  /** 画面旋转时笔迹必须按新方向重新映射，整层重绘 */
+  setRotation(rotation: Rotation): void {
+    if (this.rotation === rotation) return
+    this.rotation = rotation
     this.dirty = true
   }
 
@@ -142,7 +152,7 @@ export class InkEngine {
         if (this.dirty) this.paint()
         ctx.save()
         ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
-        paintSegment(ctx, stroke, this.rect, this.lastPoint, point)
+        paintSegment(ctx, stroke, this.rect, this.lastPoint, point, this.rotation)
         ctx.restore()
       }
     } else {
@@ -155,7 +165,7 @@ export class InkEngine {
         ctx.save()
         ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
         const from = this.lastMid ?? this.lastPoint
-        paintSmoothSegment(ctx, stroke, this.rect, from, this.lastPoint, mid)
+        paintSmoothSegment(ctx, stroke, this.rect, from, this.lastPoint, mid, this.rotation)
         ctx.restore()
       }
       this.lastMid = mid
@@ -190,7 +200,7 @@ export class InkEngine {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
-    for (const stroke of this.strokes) drawStroke(ctx, stroke, this.rect)
+    for (const stroke of this.strokes) drawStroke(ctx, stroke, this.rect, this.rotation)
     this.dirty = false
   }
 

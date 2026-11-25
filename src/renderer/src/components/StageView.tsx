@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 import { useStagePointer } from '@renderer/hooks/use-stage-pointer'
-import { imageRect, type Rect } from '@renderer/lib/geometry'
+import { imageRect, orientedSize, type Rect } from '@renderer/lib/geometry'
 import { ImageRenderer } from '@renderer/lib/image-renderer'
 import { InkEngine } from '@renderer/lib/ink-engine'
 import { setStageMetrics, useAppStore } from '@renderer/store/use-app-store'
@@ -32,7 +32,7 @@ export function StageView(): JSX.Element {
   const viewportRef = useRef<Size>({ w: 1, h: 1 })
   const imageSizeRef = useRef<Size>({ w: 1920, h: 1080 })
   const rectRef = useRef<Rect | null>(null)
-  const inkStateRef = useRef({ version: -1, doc: '', w: 0, h: 0 })
+  const inkStateRef = useRef({ version: -1, doc: '', w: 0, h: 0, rotation: -1 })
   const uploadNeededRef = useRef(true)
   const videoDirtyRef = useRef(true)
 
@@ -42,6 +42,7 @@ export function StageView(): JSX.Element {
   const frozen = useAppStore((state) => state.frozen)
   const videoEl = useAppStore((state) => state.videoEl)
   const mode = useAppStore((state) => state.mode)
+  const rotation = useAppStore((state) => state.rotation)
   const tool = useAppStore((state) => state.tool)
   const frameWidth = useCameraStore((state) => state.frameWidth)
 
@@ -134,7 +135,7 @@ export function StageView(): JSX.Element {
 
   useEffect(() => {
     uploadNeededRef.current = true
-  }, [photo, frozen, frameWidth, mode])
+  }, [photo, frozen, frameWidth, mode, rotation])
 
   useEffect(() => {
     let raf = 0
@@ -154,7 +155,9 @@ export function StageView(): JSX.Element {
       const app = useAppStore.getState()
       const viewport = viewportRef.current
       const dpr = window.devicePixelRatio || 1
-      const image = resolveImageSize()
+      const raw = resolveImageSize()
+      // 旋转 90/270 时画面显示尺寸宽高互换，视图数学一律用“显示尺寸”
+      const image = orientedSize(raw.w, raw.h, app.rotation)
       imageSizeRef.current = image
 
       renderer.resize(viewport.w, viewport.h, dpr)
@@ -173,7 +176,7 @@ export function StageView(): JSX.Element {
             // 视频帧切换瞬间可能上传失败，下一帧自动恢复
           }
         }
-        renderer.draw(rect, viewport.w, viewport.h)
+        renderer.draw(rect, viewport.w, viewport.h, app.rotation)
       }
 
       const engine = engineRef.current
@@ -182,8 +185,19 @@ export function StageView(): JSX.Element {
 
       const docKey = app.docKey()
       const state = inkStateRef.current
-      if (state.version !== app.inkVersion || state.doc !== docKey) {
-        inkStateRef.current = { version: app.inkVersion, doc: docKey, w: image.w, h: image.h }
+      if (
+        state.version !== app.inkVersion ||
+        state.doc !== docKey ||
+        state.rotation !== app.rotation
+      ) {
+        inkStateRef.current = {
+          version: app.inkVersion,
+          doc: docKey,
+          w: image.w,
+          h: image.h,
+          rotation: app.rotation
+        }
+        engine.setRotation(app.rotation)
         engine.redraw(app.currentStrokes())
       }
       // 笔迹按屏幕分辨率栅格化，平移时只贴图：既清晰又与底图同帧移动

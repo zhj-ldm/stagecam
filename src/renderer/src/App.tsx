@@ -10,6 +10,7 @@ import { useCamera } from '@renderer/hooks/use-camera'
 import { useAppStore } from '@renderer/store/use-app-store'
 import { useCameraStore } from '@renderer/store/use-camera-store'
 import { useGalleryStore } from '@renderer/store/use-gallery-store'
+import type { Rotation } from '@renderer/lib/geometry'
 
 function App(): JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -20,7 +21,10 @@ function App(): JSX.Element {
     useAppStore.setState({
       penColor: settings.penColor,
       penWidth: settings.penWidth,
-      eraserWidth: settings.eraserWidth
+      eraserWidth: settings.eraserWidth,
+      rotation: ([0, 90, 180, 270].includes(settings.rotation)
+        ? settings.rotation
+        : 0) as Rotation
     })
     useAppStore.getState().setVideoEl(videoRef.current)
     await start(settings.deviceId)

@@ -64,6 +64,7 @@ export function Dock(): JSX.Element {
   const freeze = useAppStore((state) => state.freeze)
   const unfreeze = useAppStore((state) => state.unfreeze)
   const setTool = useAppStore((state) => state.setTool)
+  const rotate = useAppStore((state) => state.rotate)
   const backToLive = useAppStore((state) => state.backToLive)
   const capture = useGalleryStore((state) => state.capture)
 
@@ -139,6 +140,10 @@ export function Dock(): JSX.Element {
               </div>
             ) : null}
           </div>
+
+          <DockButton label="旋转画面" onClick={rotate}>
+            <Icon name="rotate" size={22} />
+          </DockButton>
 
           <div className="mx-1 h-9 w-px bg-white/10" />
 

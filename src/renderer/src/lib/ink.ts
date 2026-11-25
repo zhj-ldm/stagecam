@@ -1,4 +1,4 @@
-import type { Rect } from './geometry'
+import { toScreen, type Rect, type Rotation } from './geometry'
 
 export type InkTool = 'pen' | 'eraser'
 
@@ -39,43 +39,40 @@ function strokePxWidth(stroke: Stroke, rect: Rect): number {
 function tracePath(
   ctx: CanvasRenderingContext2D,
   stroke: Stroke,
-  rect: Rect
+  rect: Rect,
+  rotation: Rotation
 ): void {
   const { points } = stroke
   if (points.length === 0) return
 
-  const first = points[0]
-  const startX = rect.x + first.u * rect.w
-  const startY = rect.y + first.v * rect.h
-
+  const first = toScreen(rect, points[0].u, points[0].v, rotation)
   if (points.length === 1) {
     const radius = strokePxWidth(stroke, rect) / 2
     ctx.beginPath()
-    ctx.arc(startX, startY, radius, 0, Math.PI * 2)
+    ctx.arc(first.x, first.y, radius, 0, Math.PI * 2)
     ctx.fill()
     return
   }
 
   ctx.beginPath()
-  ctx.moveTo(startX, startY)
+  ctx.moveTo(first.x, first.y)
   for (let i = 1; i < points.length - 1; i += 1) {
     const current = points[i]
     const next = points[i + 1]
-    const cx = rect.x + current.u * rect.w
-    const cy = rect.y + current.v * rect.h
-    const mx = rect.x + ((current.u + next.u) / 2) * rect.w
-    const my = rect.y + ((current.v + next.v) / 2) * rect.h
-    ctx.quadraticCurveTo(cx, cy, mx, my)
+    const p = toScreen(rect, current.u, current.v, rotation)
+    const m = toScreen(rect, (current.u + next.u) / 2, (current.v + next.v) / 2, rotation)
+    ctx.quadraticCurveTo(p.x, p.y, m.x, m.y)
   }
-  const last = points[points.length - 1]
-  ctx.lineTo(rect.x + last.u * rect.w, rect.y + last.v * rect.h)
+  const last = toScreen(rect, points[points.length - 1].u, points[points.length - 1].v, rotation)
+  ctx.lineTo(last.x, last.y)
   ctx.stroke()
 }
 
 export function drawStroke(
   ctx: CanvasRenderingContext2D,
   stroke: Stroke,
-  rect: Rect
+  rect: Rect,
+  rotation: Rotation = 0
 ): void {
   ctx.save()
   ctx.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over'
@@ -84,7 +81,7 @@ export function drawStroke(
   ctx.lineWidth = strokePxWidth(stroke, rect)
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
-  tracePath(ctx, stroke, rect)
+  tracePath(ctx, stroke, rect, rotation)
   ctx.restore()
 }
 

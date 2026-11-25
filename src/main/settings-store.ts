@@ -13,7 +13,8 @@ const DEFAULTS = (): AppSettings => ({
   deviceLabel: null,
   penColor: '#F53F3F',
   penWidth: 4,
-  eraserWidth: 28
+  eraserWidth: 28,
+  rotation: 0
 })
 
 let cached: AppSettings | null = null
@@ -47,6 +48,7 @@ export async function patchSettings(patch: Partial<AppSettings>): Promise<AppSet
   const current = await getSettings()
   const next: AppSettings = { ...current, ...patch }
   if (!next.galleryDir) next.galleryDir = DEFAULTS().galleryDir
+  if (![0, 90, 180, 270].includes(next.rotation)) next.rotation = 0
   await writeToDisk(next)
   cached = next
   return next

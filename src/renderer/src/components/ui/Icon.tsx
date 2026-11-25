@@ -19,8 +19,15 @@ export type IconName =
   | 'folder'
   | 'chevronLeft'
   | 'chevronRight'
+  | 'rotate'
 
 const PATHS: Record<IconName, JSX.Element> = {
+  rotate: (
+    <>
+      <path d="M19.6 12.4a7.7 7.7 0 1 1-2.5-6.4" />
+      <path d="M19.8 5v5.2h-5.2" />
+    </>
+  ),
   browse: (
     <path d="M4 9V6.5A2.5 2.5 0 0 1 6.5 4H9M15 4h2.5A2.5 2.5 0 0 1 20 6.5V9M20 15v2.5A2.5 2.5 0 0 1 17.5 20H15M9 20H6.5A2.5 2.5 0 0 1 4 17.5V15M9 9h6v6H9z" />
   ),

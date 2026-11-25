@@ -58,7 +58,7 @@ export function useStagePointer(
       const engine = inkRef.current
       if (!engine) return
       const width = app.tool === 'eraser' ? app.eraserWidth : app.penWidth
-      const { u, v } = toImage(rect, x, y)
+      const { u, v } = toImage(rect, x, y, app.rotation)
       engine.begin(createStroke(app.tool, app.penColor, width, { u, v }))
       drawPointerId.current = null
     },
@@ -124,7 +124,7 @@ export function useStagePointer(
       rawSupported.current = true
       const samples = event.getCoalescedEvents ? event.getCoalescedEvents() : [event]
       for (const sample of samples) {
-        const { u, v } = toImage(rect, sample.clientX, sample.clientY)
+        const { u, v } = toImage(rect, sample.clientX, sample.clientY, useAppStore.getState().rotation)
         engine.extend({ u, v })
       }
     }
@@ -147,7 +147,7 @@ export function useStagePointer(
         const native = event.nativeEvent
         const samples = native.getCoalescedEvents ? native.getCoalescedEvents() : [native]
         for (const sample of samples) {
-          const { u, v } = toImage(rect, sample.clientX, sample.clientY)
+          const { u, v } = toImage(rect, sample.clientX, sample.clientY, app.rotation)
           inkRef.current?.extend({ u, v })
         }
         tracked.x = event.clientX
@@ -268,17 +268,36 @@ export function useStagePointer(
     const el = containerRef.current
     if (!el) return undefined
 
+    // 滚轮缩放：把不同设备的 deltaMode 统一折算成像素增量，
+    // 再按指数映射成缩放比并限幅，滚一格 ≈ 12%~15%，跟手但不跳。
+    const wheelPixels = (event: WheelEvent, viewHeight: number): number => {
+      if (event.deltaMode === 1) return event.deltaY * 16
+      if (event.deltaMode === 2) return event.deltaY * viewHeight
+      return event.deltaY
+    }
+
     const handleWheel = (event: WheelEvent): void => {
       event.preventDefault()
       const app = useAppStore.getState()
-      if (app.mode !== 'browse') return
+      const rect = getRect()
+      const pixels = wheelPixels(event, el.clientHeight)
+
+      // 触控板双指捏合（Chromium 会给 ctrlKey 合成事件）：永远走缩放
       if (event.ctrlKey || event.metaKey) {
-        // 触控板捏合走系统给的平滑增量；同样做限幅，避免个别设备给极端值
-        const factor = Math.min(1.2, Math.max(0.85, Math.exp(-event.deltaY / 120)))
+        const factor = Math.min(1.2, Math.max(0.85, Math.exp(-pixels / 120)))
         app.zoomBy(factor, event.clientX, event.clientY)
         return
       }
-      app.panBy(-event.deltaX, -event.deltaY)
+
+      // 鼠标滚轮（一格通常是 100px 级别的离散增量）→ 缩放，锚定在光标处
+      if (Math.abs(pixels) >= 40) {
+        const factor = Math.min(1.2, Math.max(0.8, Math.exp(-pixels / 160)))
+        app.zoomBy(factor, event.clientX, event.clientY)
+        return
+      }
+
+      // 触控板两指轻扫（连续的小增量）→ 平移，保持原先的滑动手感
+      if (rect && app.mode === 'browse') app.panBy(-event.deltaX, -event.deltaY)
     }
 
     const blockContextMenu = (event: Event): void => event.preventDefault()
@@ -288,7 +307,7 @@ export function useStagePointer(
       el.removeEventListener('wheel', handleWheel)
       el.removeEventListener('contextmenu', blockContextMenu)
     }
-  }, [containerRef])
+  }, [containerRef, getRect])
 
   return { onPointerDown, onPointerMove, onPointerUp, onPointerCancel }
 }

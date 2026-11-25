@@ -10,6 +10,8 @@ export interface ViewState {
   y: number
 }
 
+export type Rotation = 0 | 90 | 180 | 270
+
 export interface Rect {
   x: number
   y: number
@@ -20,6 +22,39 @@ export interface Rect {
 /** 缩放范围：不设“原厂软件那种上限”，放大到 80× 仍可继续拖动观察细节 */
 export const MIN_SCALE = 0.15
 export const MAX_SCALE = 80
+
+/** 旋转 90/270 时显示框的宽高互换 */
+export function orientedSize(
+  width: number,
+  height: number,
+  rotation: Rotation
+): { w: number; h: number } {
+  return rotation === 90 || rotation === 270 ? { w: height, h: width } : { w: width, h: height }
+}
+
+/** 图像坐标 → 显示坐标（顺时针旋转 rotation 度） */
+export function rotateUV(
+  u: number,
+  v: number,
+  rotation: Rotation
+): { u: number; v: number } {
+  if (rotation === 90) return { u: 1 - v, v: u }
+  if (rotation === 180) return { u: 1 - u, v: 1 - v }
+  if (rotation === 270) return { u: v, v: 1 - u }
+  return { u, v }
+}
+
+/** 显示坐标 → 图像坐标，是 rotateUV 的逆变换 */
+export function unrotateUV(
+  u: number,
+  v: number,
+  rotation: Rotation
+): { u: number; v: number } {
+  if (rotation === 90) return { u: v, v: 1 - u }
+  if (rotation === 180) return { u: 1 - u, v: 1 - v }
+  if (rotation === 270) return { u: 1 - v, v: u }
+  return { u, v }
+}
 
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value))
@@ -49,16 +84,31 @@ export function imageRect(
   }
 }
 
-export function toImage(rect: Rect, screenX: number, screenY: number): { u: number; v: number } {
+/**
+ * 屏幕坐标 → 图像坐标。
+ * rect 是「旋转后」的显示框，因此先把归一化坐标换算回未旋转的图像坐标，
+ * 笔迹才能始终贴在画面内容上。
+ */
+export function toImage(
+  rect: Rect,
+  screenX: number,
+  screenY: number,
+  rotation: Rotation = 0
+): { u: number; v: number } {
   if (rect.w === 0 || rect.h === 0) return { u: 0, v: 0 }
-  return {
-    u: (screenX - rect.x) / rect.w,
-    v: (screenY - rect.y) / rect.h
-  }
+  const a = (screenX - rect.x) / rect.w
+  const b = (screenY - rect.y) / rect.h
+  return unrotateUV(a, b, rotation)
 }
 
-export function toScreen(rect: Rect, u: number, v: number): { x: number; y: number } {
-  return { x: rect.x + u * rect.w, y: rect.y + v * rect.h }
+export function toScreen(
+  rect: Rect,
+  u: number,
+  v: number,
+  rotation: Rotation = 0
+): { x: number; y: number } {
+  const p = rotateUV(u, v, rotation)
+  return { x: rect.x + p.u * rect.w, y: rect.y + p.v * rect.h }
 }
 
 /** 以锚点为中心缩放：锚点下的图像内容保持不动 */

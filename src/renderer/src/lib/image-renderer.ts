@@ -1,4 +1,4 @@
-import type { Rect } from './geometry'
+import { unrotateUV, type Rect, type Rotation } from './geometry'
 
 const VERTEX_SHADER = `
 attribute vec2 a_pos;
@@ -109,32 +109,41 @@ export class ImageRenderer {
     gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, gl.RGBA, gl.UNSIGNED_BYTE, source)
   }
 
-  /** rect 为 CSS 像素坐标；pos 转 clip space，纹理坐标左上为 (0,0) */
-  draw(rect: Rect, viewWidth: number, viewHeight: number): void {
+/**
+   * rect 为 CSS 像素坐标；pos 转 clip space，纹理坐标左上为 (0,0)。
+   * 旋转直接在四个角的纹理坐标上做：显示坐标 → 未旋转的图像坐标，
+   * 于是画面旋转 90° 只是换一组 uv，GPU 成本为零。
+   */
+  draw(rect: Rect, viewWidth: number, viewHeight: number, rotation: Rotation = 0): void {
     const gl = this.gl
     const left = (rect.x / viewWidth) * 2 - 1
     const right = ((rect.x + rect.w) / viewWidth) * 2 - 1
     const top = 1 - (rect.y / viewHeight) * 2
     const bottom = 1 - ((rect.y + rect.h) / viewHeight) * 2
 
+    const cornerUV: Array<[number, number]> = [
+      [0, 0],
+      [1, 0],
+      [0, 1],
+      [1, 1]
+    ]
+
     const v = this.vertices
     // x, y, u, v
     v[0] = left
     v[1] = top
-    v[2] = 0
-    v[3] = 0
     v[4] = right
     v[5] = top
-    v[6] = 1
-    v[7] = 0
     v[8] = left
     v[9] = bottom
-    v[10] = 0
-    v[11] = 1
     v[12] = right
     v[13] = bottom
-    v[14] = 1
-    v[15] = 1
+    for (let i = 0; i < 4; i += 1) {
+      const [a, b] = cornerUV[i]
+      const uv = unrotateUV(a, b, rotation)
+      v[i * 4 + 2] = uv.u
+      v[i * 4 + 3] = uv.v
+    }
 
     gl.clear(gl.COLOR_BUFFER_BIT)
     gl.useProgram(this.program)
