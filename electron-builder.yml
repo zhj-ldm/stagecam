@@ -1,0 +1,18 @@
+appId: com.zhj.stagecam
+productName: StageCam
+directories:
+  output: release
+files:
+  - out/**
+  - package.json
+mac:
+  target: dmg
+  category: public.app-category.education
+win:
+  target: nsis
+  artifactName: StageCam-${version}-setup.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false

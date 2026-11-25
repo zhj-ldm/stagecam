@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* 品牌色 */
+  --color-primary: #165dff;
+  --color-primary-hover: #4080ff;
+  --color-primary-active: #0e42d2;
+  --color-primary-light: #e8f3ff;
+
+  /* 深色悬浮 UI 上的文字层级：数值与设计规范同源，亮度按暗色场景反相 */
+  --color-text-1: #f7f8fa;
+  --color-text-2: #d7dbe0;
+  --color-text-3: #9aa1ab;
+  --color-text-4: #5a6069;
+
+  --color-surface-1: rgba(13, 15, 20, 0.76);
+  --color-surface-2: rgba(20, 22, 28, 0.82);
+  --color-surface-3: rgba(255, 255, 255, 0.08);
+
+  --color-success: #00b42a;
+  --color-warning: #ff7d00;
+  --color-error: #f53f3f;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 24px;
+
+  --font-ui: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'PingFang SC',
+    'Segoe UI Variable', 'Segoe UI', 'Microsoft YaHei', sans-serif;
+
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #05060a;
+    color: var(--color-text-2);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    /* 触控屏上禁止选中与文本放大，避免长按出现选择柄 */
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+    -webkit-app-region: no-drag;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+@layer components {
+  .glass {
+    background: var(--color-surface-1);
+    backdrop-filter: blur(30px) saturate(140%);
+    -webkit-backdrop-filter: blur(30px) saturate(140%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  }
+
+  .glass-panel {
+    background: rgba(16, 18, 24, 0.9);
+    backdrop-filter: blur(36px) saturate(150%);
+    -webkit-backdrop-filter: blur(36px) saturate(150%);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  }
+}
