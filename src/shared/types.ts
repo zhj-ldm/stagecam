@@ -24,7 +24,15 @@ export interface AppSettings {
   eraserWidth: number
   /** 画面旋转角度，只允许 0 / 90 / 180 / 270，随软件记住 */
   rotation: number
+  /**
+   * 界面模式：
+   * - normal：完整功能（浏览/批注切换、画笔、橡皮、旋转、锁定、拍照）
+   * - sped：特供（配合讯飞自带画笔的教室场景，只保留旋转/锁定/拍照/退出）
+   */
+  uiMode: UiMode
 }
+
+export type UiMode = 'normal' | 'sped'
 
 export interface SavePhotoPayload {
   buffer: ArrayBuffer

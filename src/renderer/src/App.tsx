@@ -11,6 +11,7 @@ import { useAppStore } from '@renderer/store/use-app-store'
 import { useCameraStore } from '@renderer/store/use-camera-store'
 import { useGalleryStore } from '@renderer/store/use-gallery-store'
 import type { Rotation } from '@renderer/lib/geometry'
+import type { UiMode } from '@shared/types'
 
 function App(): JSX.Element {
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -24,7 +25,9 @@ function App(): JSX.Element {
       eraserWidth: settings.eraserWidth,
       rotation: ([0, 90, 180, 270].includes(settings.rotation)
         ? settings.rotation
-        : 0) as Rotation
+        : 0) as Rotation,
+      uiMode: (settings.uiMode === 'normal' ? 'normal' : 'sped') as UiMode,
+      mode: settings.uiMode === 'normal' ? useAppStore.getState().mode : 'browse'
     })
     useAppStore.getState().setVideoEl(videoRef.current)
     await start(settings.deviceId)

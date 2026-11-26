@@ -8,6 +8,7 @@ import { useGalleryStore } from '@renderer/store/use-gallery-store'
 import { DockButton } from './DockButton'
 import { EraserPopover } from './EraserPopover'
 import { PenPopover, PopoverShell } from './PenPopover'
+import { SpedDock } from './SpedDock'
 
 type OpenPopover = 'pen' | 'eraser' | null
 
@@ -56,6 +57,7 @@ function ModeSegment(): JSX.Element {
 export function Dock(): JSX.Element {
   const [openPopover, setOpenPopover] = useState<OpenPopover>(null)
 
+  const uiMode = useAppStore((state) => state.uiMode)
   const mode = useAppStore((state) => state.mode)
   const tool = useAppStore((state) => state.tool)
   const penColor = useAppStore((state) => state.penColor)
@@ -69,6 +71,9 @@ export function Dock(): JSX.Element {
   const capture = useGalleryStore((state) => state.capture)
 
   const annotating = mode === 'annotate'
+
+  // 特供模式：整套底栏换成左侧精简竖排，画笔/橡皮/批注全部不出现
+  if (uiMode === 'sped') return <SpedDock />
 
   const toggleLock = async (): Promise<void> => {
     if (isPhoto) return

@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 
 import { clampView, fitView, zoomAt, type Rotation } from '@renderer/lib/geometry'
+import type { UiMode } from '@shared/types'
 import type { InkTool, Stroke } from '@renderer/lib/ink'
 
 export type AppMode = 'browse' | 'annotate'
@@ -20,6 +21,8 @@ interface AppState {
   eraserWidth: number
   /** 画面旋转，每次点击 +90° 循环 */
   rotation: Rotation
+  /** 界面模式：特供模式只留旋转/锁定/拍照/退出，且固定在浏览（不可批注） */
+  uiMode: UiMode
 
   videoEl: HTMLVideoElement | null
   frozen: ImageBitmap | null
@@ -36,6 +39,7 @@ interface AppState {
   setEraserWidth: (width: number) => void
   rotate: () => void
   setRotation: (rotation: Rotation) => void
+  setUiMode: (uiMode: UiMode) => void
   setVideoEl: (el: HTMLVideoElement | null) => void
 
   freeze: () => Promise<void>
@@ -65,6 +69,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   penWidth: 5,
   eraserWidth: 32,
   rotation: 0,
+  uiMode: 'sped',
 
   videoEl: null,
   frozen: null,
@@ -74,7 +79,11 @@ export const useAppStore = create<AppState>((set, get) => ({
   strokesByDoc: {},
   inkVersion: 0,
 
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) => {
+    // 特供模式下不提供批注能力，书写交给系统自带画笔
+    if (mode === 'annotate' && get().uiMode === 'sped') return
+    set({ mode })
+  },
   setTool: (tool) => set({ tool }),
 
   setPenColor: (penColor) => {
@@ -99,6 +108,12 @@ export const useAppStore = create<AppState>((set, get) => ({
     // 旋转后显示框宽高互换，旧的位移没有意义，直接回到适配视图
     set({ rotation, view: fitView() })
     void window.api.settings.patch({ rotation })
+  },
+
+  setUiMode: (uiMode) => {
+    // 特供模式没有批注入口，必须回到浏览态，否则手势与底栏会不一致
+    set({ uiMode, mode: uiMode === 'sped' ? 'browse' : get().mode })
+    void window.api.settings.patch({ uiMode })
   },
 
   setVideoEl: (videoEl) => set({ videoEl }),

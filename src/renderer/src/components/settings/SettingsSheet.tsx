@@ -87,6 +87,34 @@ export function SettingsSheet({ onSelectDevice }: SettingsSheetProps): JSX.Eleme
             </button>
           </div>
 
+          <Row
+            title="界面模式"
+            description="普通模式：完整底栏（浏览/批注、画笔、橡皮、旋转、锁定、拍照）。特供模式：配合讯飞自带画笔，只保留锁定 / 旋转 / 拍照 / 退出。"
+          >
+            <div className="relative flex h-10 overflow-hidden">
+              <Squircle radius={12} className="absolute inset-0 bg-white/8" />
+              {(['normal', 'sped'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={(settings?.uiMode ?? 'sped') === value}
+                  onClick={() => {
+                    useAppStore.getState().setUiMode(value)
+                    void patch({ uiMode: value })
+                  }}
+                  className={`relative flex h-full w-1/2 items-center justify-center text-[12px] font-semibold transition-colors ${
+                    (settings?.uiMode ?? 'sped') === value ? 'text-ink-1' : 'text-ink-3'
+                  }`}
+                >
+                  {value === 'normal' ? '普通模式' : '特供模式'}
+                  {(settings?.uiMode ?? 'sped') === value ? (
+                    <Squircle radius={12} className="absolute inset-0 -z-10 bg-white/18" />
+                  ) : null}
+                </button>
+              ))}
+            </div>
+          </Row>
+
           <Row title="相册存储位置" description="新拍的照片会写入该目录，已有照片不会被移动。">
             <div className="flex items-center gap-2">
               <div className="flex-1 truncate rounded-md bg-white/6 px-2.5 py-2 text-[12px] text-ink-2">

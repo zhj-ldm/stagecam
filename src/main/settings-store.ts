@@ -14,7 +14,8 @@ const DEFAULTS = (): AppSettings => ({
   penColor: '#F53F3F',
   penWidth: 4,
   eraserWidth: 28,
-  rotation: 0
+  rotation: 0,
+  uiMode: 'sped'
 })
 
 let cached: AppSettings | null = null
@@ -49,6 +50,7 @@ export async function patchSettings(patch: Partial<AppSettings>): Promise<AppSet
   const next: AppSettings = { ...current, ...patch }
   if (!next.galleryDir) next.galleryDir = DEFAULTS().galleryDir
   if (![0, 90, 180, 270].includes(next.rotation)) next.rotation = 0
+  if (next.uiMode !== 'normal' && next.uiMode !== 'sped') next.uiMode = 'sped'
   await writeToDisk(next)
   cached = next
   return next
